@@ -1,0 +1,136 @@
+{
+  "appointments": [
+    {
+      "id": "1",
+      "patient": "Ravi Kumar",
+      "time": "10:00 AM",
+      "doctorName": "Dr.jayant sharma",
+      "location": "Room 101",
+      "mobile": "9876543210",
+      "visitType": "New Visit"
+    },
+    {
+      "id": "1",
+      "patient": "ABCD Kumar",
+      "time": "10:00 AM",
+      "doctorName": "Dr.jayant sharma",
+      "date": "2025-09-08",
+      "mobile": "9876543210",
+      "visitType": "New Visit"
+    },
+    {
+      "id": "1",
+      "patient": "Ravi Kumar",
+      "time": "10:00 AM",
+      "doctorName": "Dr.jayant sharma",
+      "date": "2025-09-08",
+      "location": "Room 101",
+      "mobile": "9876543210",
+      "visitType": "New Visit"
+    },
+    {
+      "id": "1",
+      "patient": "Ravi Kumar",
+      "time": "10:00 AM",
+      "doctorName": "Dr.jayant sharma",
+      "date": "2025-09-08",
+      "location": "Room 101",
+      "mobile": "9876543210",
+      "visitType": "New Visit"
+    },
+    {
+      "id": "1",
+      "patient": "Ravi Teja",
+      "time": "11:00 AM",
+      "doctorName": "Dr.shobha verma",
+      "date": "2025-09-08",
+      "location": "Room 101",
+      "mobile": "9876543210",
+      "visitType": "New Visit"
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "name": "Dr. Neha Sharma",
+      "email": "neha@clinic.com",
+      "role": "doctor",
+      "department": "Cardiology"
+    },
+    {
+      "id": "2",
+      "name": "Ravi Patel",
+      "email": "ravi@clinic.com",
+      "role": "staff"
+    },
+    {
+      "id": "3",
+      "name": "Admin User",
+      "email": "admin@clinic.com",
+      "role": "admin"
+    }
+  ],
+  "patients": [
+    {
+      "id": "1",
+      "name": "Ravi Kumar",
+      "age": 34,
+      "mobile": "9876543210",
+      "history": {
+        "conditions": ["High BP", "Type 2 Diabetes"],
+        "lastVisit": "2025-08-20",
+        "advice": "Reduce salt intake, daily walk",
+        "scans": ["Chest X-ray", "ECG"],
+        "surgeries": ["Appendectomy (2020)"]
+      }
+    },
+    {
+      "id": "2",
+      "name": "Neha Sharma",
+      "age": 29,
+      "mobile": "9123456780",
+      "history": {
+        "conditions": ["Thyroid"],
+        "lastVisit": "2025-09-01",
+        "advice": "Continue medication, follow-up in 3 months",
+        "scans": [],
+        "surgeries": []
+      }
+    }
+  ],
+  "prescriptions": [
+    {
+      "id": "1",
+      "patientId": 1,
+      "doctorId": 1,
+      "date": "2025-09-07",
+      "medications": [
+        {
+          "name": "Metformin",
+          "dosage": "500mg",
+          "frequency": "Twice a day"
+        },
+        {
+          "name": "Amlodipine",
+          "dosage": "5mg",
+          "frequency": "Once a day"
+        }
+      ],
+      "notes": "Monitor blood sugar and BP weekly"
+    },
+    {
+      "id": "2",
+      "patientId": 2,
+      "doctorId": 1,
+      "date": "2025-09-01",
+      "medications": [
+        {
+          "name": "Levothyroxine",
+          "dosage": "75mcg",
+          "frequency": "Once a day"
+        }
+      ],
+      "notes": "Check TSH levels next visit"
+    }
+  ]
+}

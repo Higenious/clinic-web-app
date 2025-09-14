@@ -1,0 +1,6 @@
+/* Corrected body rule for index.css */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
