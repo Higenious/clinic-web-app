@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -23,16 +23,20 @@ import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import HistoryIcon from '@mui/icons-material/History';
-import DescriptionIcon from '@mui/icons-material/Description';
 
 import { useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;
 
 const Layout = ({ children, selectedPage }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  // We only need a state for the mobile drawer, as the desktop one is permanent
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const role = localStorage.getItem('role') || 'staff';
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -54,13 +58,17 @@ const Layout = ({ children, selectedPage }) => {
 
   const drawerContent = (
     <Box sx={{ overflow: 'auto', backgroundColor: '#f5f5f5', height: '100%' }}>
+      <Toolbar /> {/* Adds space for the AppBar on mobile */}
       <List>
         {menuItems.map((item) => (
           <ListItem
             button
             key={item.key}
             selected={selectedPage === item.key}
-            onClick={() => navigate(`/${item.key}`)}
+            onClick={() => {
+              navigate(`/${item.key}`);
+              setMobileOpen(false); // Close mobile drawer on click
+            }}
             sx={{
               backgroundColor: selectedPage === item.key ? '#e3f2fd' : 'inherit',
               color: selectedPage === item.key ? '#1976d2' : 'inherit',
@@ -100,8 +108,8 @@ const Layout = ({ children, selectedPage }) => {
           <IconButton
             color="inherit"
             edge="start"
-            onClick={() => setIsOpen(!isOpen)}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { md: 'none' } }} // Only show on small screens
           >
             <MenuIcon />
           </IconButton>
@@ -116,52 +124,50 @@ const Layout = ({ children, selectedPage }) => {
         </Toolbar>
       </AppBar>
 
-      {/* Desktop Drawer */}
-      <Drawer
-        variant="permanent"
+      {/* Main Drawer */}
+      <Box
+        component="nav"
         sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: {
-            width: drawerWidth,
-            boxSizing: 'border-box',
+          width: { md: drawerWidth },
+          flexShrink: { md: 0 },
+        }}
+      >
+        {/* Mobile Drawer (Temporary) */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+        
+        {/* Desktop Drawer (Permanent) */}
+        <Drawer
+          variant="permanent"
+          sx={{
             display: { xs: 'none', md: 'block' },
-            borderRight: 'none',
-          }
-        }}
-        open
-      >
-        <Toolbar />
-        {drawerContent}
-      </Drawer>
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, borderRight: 'none' },
+          }}
+          open
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
 
-      {/* Mobile Drawer */}
-      <Drawer
-        variant="temporary"
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          [`& .MuiDrawer-paper`]: {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-          }
-        }}
-      >
-        <Toolbar />
-        {drawerContent}
-      </Drawer>
-
-      {/* Main Content */}
+      {/* Main Content Area */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
+          p: 3,
           minHeight: '100vh',
-          overflowY: 'auto',
-          pt: '64px', // Add top padding to account for AppBar height
-          width: { md: `calc(100% - ${drawerWidth}px)` }, // Ensures width is correct
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+          mt: '64px', // Add top margin to avoid content under AppBar
         }}
       >
         {children}

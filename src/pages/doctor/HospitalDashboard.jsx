@@ -104,6 +104,7 @@ const HospitalDashboard = () => {
           Your appointments for today:
         </Typography>
 
+        <Box sx={{ overflowX: 'auto' }}>
         <TableContainer component={Paper} elevation={3}>
           <Table aria-label="today's appointments table">
             <TableHead sx={{ backgroundColor: "#e3f2fd" }}>
@@ -171,6 +172,7 @@ const HospitalDashboard = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        </Box>
       </Box>
     </Layout>
   );
