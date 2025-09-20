@@ -19,7 +19,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import HistoryIcon from '@mui/icons-material/History';
@@ -47,7 +46,6 @@ const Layout = ({ children, selectedPage }) => {
   const menuItems = [
     { key: 'hospital', text: 'Dashboard', icon: <DashboardIcon /> },
     { key: 'appointment', text: 'Make Appointment', icon: <CalendarMonthIcon /> },
-    { key: 'patient-entry', text: 'Patient Entry', icon: <PersonIcon /> },
     ...(role === 'doctor'
       ? [
           { key: 'patient-history', text: 'Patient History', icon: <HistoryIcon /> }
@@ -145,8 +143,6 @@ const Layout = ({ children, selectedPage }) => {
         >
           {drawerContent}
         </Drawer>
-        
-        {/* Desktop Drawer (Permanent) */}
         <Drawer
           variant="permanent"
           sx={{
@@ -158,8 +154,6 @@ const Layout = ({ children, selectedPage }) => {
           {drawerContent}
         </Drawer>
       </Box>
-
-      {/* Main Content Area */}
       <Box
         component="main"
         sx={{
@@ -167,7 +161,7 @@ const Layout = ({ children, selectedPage }) => {
           p: 3,
           minHeight: '100vh',
           width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
-          mt: '64px', // Add top margin to avoid content under AppBar
+          mt: '64px',
         }}
       >
         {children}

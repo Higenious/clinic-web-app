@@ -9,7 +9,6 @@ import {
 // Pages
 import LoginPage from "../src/pages/doctor/Login";
 import HospitalDashboard from "./pages/doctor/HospitalDashboard";
-import PatientEntryPage from "./pages/patient/PatientEntryPage";
 import AppointmentPage from "./pages/patient/AppointmentPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import AdminDashboard from "./pages/admin/AdminDashboard"
@@ -55,14 +54,6 @@ function App() {
           element={
             <PrivateRoute allowedRoles={["staff", "doctor"]}>
               <AppointmentPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/patient-entry"
-          element={
-            <PrivateRoute allowedRoles={["staff", "doctor"]}>
-              <PatientEntryPage />
             </PrivateRoute>
           }
         />

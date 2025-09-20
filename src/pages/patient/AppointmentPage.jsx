@@ -16,19 +16,30 @@ import {
   RadioGroup,
   Radio,
   FormLabel,
-  Card,
-  CardContent,
-  CardMedia,
 } from '@mui/material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import Swal from 'sweetalert2';
 import Layout from '../../utils/Layout';
 
-// Mock API function (replace with your actual API call)
+// Mock patient data for searching
+const mockPatients = [
+  { mobile: '1234567890', patientName: 'Anil Kumar', age: 35, gender: 'Male', briefMedicalEntry: 'Regular check-up', reasonForVisit: 'Routine check-up' },
+  { mobile: '0987654321', patientName: 'Priya Sharma', age: 42, gender: 'Female', briefMedicalEntry: 'History of migraines', reasonForVisit: 'Migraine consultation' },
+];
+
+// Mock API functions (replace with your actual API calls)
 const makeAppointment = async (appointmentData) => {
   console.log('API call to book appointment:', appointmentData);
-  // Simulating an API call
   return new Promise((resolve) => setTimeout(resolve, 1000));
+};
+
+const getPatientByMobile = async (mobile) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const patient = mockPatients.find(p => p.mobile === mobile);
+      resolve(patient || null);
+    }, 500);
+  });
 };
 
 const availableDoctors = [
@@ -38,12 +49,19 @@ const availableDoctors = [
 ];
 
 const AppointmentPage = () => {
-  const [appointment, setAppointment] = useState({
+  const [formData, setFormData] = useState({
     patientName: '',
+    age: '',
+    gender: '',
+    mobile: '',
+    briefMedicalEntry: '',
+    reasonForVisit: '',
+    bp: '',
+    sugar: '',
+    pulse: '',
     doctorName: '',
     date: '',
     time: '',
-    mobile: '',
     visitType: '',
   });
 
@@ -54,32 +72,32 @@ const AppointmentPage = () => {
   const validateForm = () => {
     let tempErrors = {};
     const today = new Date();
-    const selectedDate = new Date(appointment.date);
-    const selectedTime = appointment.time;
+    today.setHours(0, 0, 0, 0);
 
-    // Patient Name Validation
-    if (!appointment.patientName || /\d/.test(appointment.patientName)) {
+    const selectedDate = new Date(formData.date);
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 5);
+
+    if (!formData.patientName || /\d/.test(formData.patientName)) {
       tempErrors.patientName = 'Patient name is required and cannot contain numbers.';
     }
 
-    // Doctor Name Validation
-    if (!appointment.doctorName) {
-      tempErrors.doctorName = 'Please select a doctor.';
-    }
-
-    // Mobile Number Validation
-    if (!appointment.mobile || !/^\d{10}$/.test(appointment.mobile)) {
+    if (!formData.mobile || !/^\d{10}$/.test(formData.mobile)) {
       tempErrors.mobile = 'Mobile number must be exactly 10 digits.';
     }
 
-    // Date Validation
-    if (!appointment.date || selectedDate < today.setHours(0, 0, 0, 0)) {
-      tempErrors.date = 'Appointment date cannot be in the past.';
+    if (!formData.doctorName) {
+      tempErrors.doctorName = 'Please select a doctor.';
     }
 
-    // Time Validation (10 AM to 9 PM)
-    const [hours] = selectedTime.split(':').map(Number);
-    if (!selectedTime || hours < 10 || hours >= 21) {
+    if (!formData.date || selectedDate < today) {
+      tempErrors.date = 'Appointment date cannot be in the past.';
+    } else if (selectedDate > maxDate) {
+      tempErrors.date = 'Appointments can only be made for the next 5 days.';
+    }
+
+    const [hours] = formData.time.split(':').map(Number);
+    if (!formData.time || hours < 10 || hours >= 21) {
       tempErrors.time = 'OPD hours are from 10:00 AM to 9:00 PM.';
     }
 
@@ -89,14 +107,32 @@ const AppointmentPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setAppointment({ ...appointment, [name]: value });
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleMobileChange = async (e) => {
+    const mobile = e.target.value;
+    setFormData({ ...formData, mobile: mobile });
+
+    if (mobile.length === 10 && /^\d{10}$/.test(mobile)) {
+      const existingPatient = await getPatientByMobile(mobile);
+      if (existingPatient) {
+        setFormData(prevData => ({
+          ...prevData,
+          ...existingPatient,
+        }));
+        setSnackbar({ open: true, message: 'Patient details found!', severity: 'success' });
+      } else {
+        setSnackbar({ open: true, message: 'New patient. Please fill in the details.', severity: 'info' });
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
       try {
-        await makeAppointment(appointment);
+        await makeAppointment(formData);
         Swal.fire({
           icon: 'success',
           title: 'Appointment Booked!',
@@ -104,7 +140,21 @@ const AppointmentPage = () => {
           timer: 2000,
           showConfirmButton: false,
         });
-        setAppointment({ patientName: '', doctorName: '', date: '', time: '', mobile: '', visitType: '' });
+        setFormData({
+          patientName: '',
+          age: '',
+          gender: '',
+          mobile: '',
+          briefMedicalEntry: '',
+          reasonForVisit: '',
+          bp: '',
+          sugar: '',
+          pulse: '',
+          doctorName: '',
+          date: '',
+          time: '',
+          visitType: '',
+        });
         setErrors({});
       } catch (err) {
         console.log(err);
@@ -119,6 +169,17 @@ const AppointmentPage = () => {
     }
   };
 
+  const getMinMaxDates = () => {
+    const today = new Date();
+    const minDate = today.toISOString().split('T')[0];
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 5);
+    const maxDateString = maxDate.toISOString().split('T')[0];
+    return { min: minDate, max: maxDateString };
+  };
+
+  const { min, max } = getMinMaxDates();
+
   return (
     <Layout selectedPage="appointment" role={role}>
       <Box sx={{ p: 3 }}>
@@ -129,145 +190,145 @@ const AppointmentPage = () => {
           </Typography>
         </Box>
 
-        {/* This is the new flex container that holds the two columns */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 4,
-            alignItems: 'flex-start',
-            maxWidth: '1200px', // Set a max width to keep content readable
-            mx: 'auto' // Center the entire layout
-          }}
-        >
-          {/* Left Column: The Appointment Form */}
-          <Box sx={{ flex: 1 }}>
-            <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-              <Typography variant="h6" gutterBottom>Appointment Details</Typography>
-              <form onSubmit={handleSubmit} noValidate>
-                <Grid container direction="column" spacing={3}>
-                  <Grid item>
-                    <TextField
-                      label="Patient Name"
-                      name="patientName"
-                      fullWidth
-                      value={appointment.patientName}
-                      onChange={handleChange}
-                      error={!!errors.patientName}
-                      helperText={errors.patientName}
-                    />
-                  </Grid>
-                  <Grid item>
-                    <TextField
-                      label="Mobile Number"
-                      name="mobile"
-                      fullWidth
-                      value={appointment.mobile}
-                      onChange={handleChange}
-                      error={!!errors.mobile}
-                      helperText={errors.mobile}
-                      inputProps={{ maxLength: 10 }}
-                    />
-                  </Grid>
-                  <Grid item>
-                    <FormControl fullWidth error={!!errors.doctorName}>
-                      <InputLabel id="doctor-select-label">Doctor's Name</InputLabel>
-                      <Select
-                        labelId="doctor-select-label"
-                        name="doctorName"
-                        value={appointment.doctorName}
-                        label="Doctor's Name"
-                        onChange={handleChange}
-                      >
-                        <MenuItem value="">
-                          <em>Select Doctor</em>
-                        </MenuItem>
-                        {availableDoctors.map((doctor) => (
-                          <MenuItem key={doctor.id} value={doctor.name}>
-                            {doctor.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {errors.doctorName && (
-                        <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
-                          {errors.doctorName}
-                        </Typography>
-                      )}
-                    </FormControl>
-                  </Grid>
-                  <Grid item>
-                    <FormControl component="fieldset" fullWidth>
-                      <FormLabel component="legend">Visit Type</FormLabel>
-                      <RadioGroup
-                        row
-                        name="visitType"
-                        value={appointment.visitType}
-                        onChange={handleChange}
-                      >
-                        <FormControlLabel value="New Patient" control={<Radio />} label="New Patient" />
-                        <FormControlLabel value="Follow-up" control={<Radio />} label="Follow-up" />
-                        <FormControlLabel value="Consultation" control={<Radio />} label="Consultation" />
-                      </RadioGroup>
-                    </FormControl>
-                  </Grid>
-                  <Grid item>
-                    <TextField
-                      type="date"
-                      label="Appointment Date"
-                      name="date"
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                      value={appointment.date}
-                      onChange={handleChange}
-                      error={!!errors.date}
-                      helperText={errors.date}
-                      inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                    />
-                  </Grid>
-                  <Grid item>
-                    <TextField
-                      type="time"
-                      label="Appointment Time"
-                      name="time"
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                      value={appointment.time}
-                      onChange={handleChange}
-                      error={!!errors.time}
-                      helperText={errors.time}
-                    />
-                  </Grid>
-                </Grid>
-                <Button variant="contained" type="submit" fullWidth sx={{ mt: 3, py: 1.5 }}>
-                  Book Appointment
-                </Button>
-              </form>
-            </Paper>
-          </Box>
-
-          {/* Right Column: Image and Text */}
-          <Box sx={{ flex: 1, mt: { xs: 4, md: 0 } }}>
-            <Card elevation={3}>
-              <CardMedia
-                component="img"
-                height="300"
-                image="https://etimg.etb2bimg.com/photo/122497653.cms" // Replace with a real image URL
-                alt="Clinic building or waiting room"
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <form onSubmit={handleSubmit} noValidate>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Patient Information Section */}
+              <Typography variant="subtitle1" fontWeight="bold">Patient Information</Typography>
+              <TextField
+                label="Mobile Number"
+                name="mobile"
+                fullWidth
+                value={formData.mobile}
+                onChange={handleMobileChange}
+                error={!!errors.mobile}
+                helperText={errors.mobile}
+                inputProps={{ maxLength: 10 }}
               />
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Book an Appointment Today!
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Our clinic is dedicated to providing compassionate and high-quality care. Schedule your visit with our expert doctors today and take the first step towards better health.
-                </Typography>
-                <Button size="small" variant="text" sx={{ mt: 2 }}>
-                  Learn More About Us
-                </Button>
-              </CardContent>
-            </Card>
-          </Box>
-        </Box>
+              <TextField
+                label="Patient Name"
+                name="patientName"
+                fullWidth
+                value={formData.patientName}
+                onChange={handleChange}
+                error={!!errors.patientName}
+                helperText={errors.patientName}
+              />
+              <TextField
+                label="Age"
+                name="age"
+                fullWidth
+                type="number"
+                value={formData.age}
+                onChange={handleChange}
+              />
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">Gender</FormLabel>
+                <RadioGroup row name="gender" value={formData.gender} onChange={handleChange}>
+                  <FormControlLabel value="Male" control={<Radio />} label="Male" />
+                  <FormControlLabel value="Female" control={<Radio />} label="Female" />
+                  <FormControlLabel value="Other" control={<Radio />} label="Other" />
+                </RadioGroup>
+              </FormControl>
+              <TextField
+                label="Reason for Visit"
+                name="reasonForVisit"
+                fullWidth
+                multiline
+                rows={2}
+                value={formData.reasonForVisit}
+                onChange={handleChange}
+              />
+
+              {/* Optional Vitals Section */}
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 2 }}>Optional Vitals</Typography>
+              <TextField
+                label="BP (optional)"
+                name="bp"
+                fullWidth
+                value={formData.bp}
+                onChange={handleChange}
+              />
+              <TextField
+                label="Sugar (optional)"
+                name="sugar"
+                fullWidth
+                value={formData.sugar}
+                onChange={handleChange}
+              />
+              <TextField
+                label="Pulse (optional)"
+                name="pulse"
+                fullWidth
+                value={formData.pulse}
+                onChange={handleChange}
+              />
+
+              {/* Appointment Details Section */}
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ mt: 2 }}>Appointment Details</Typography>
+              <FormControl fullWidth error={!!errors.doctorName}>
+                <InputLabel id="doctor-select-label">Doctor's Name</InputLabel>
+                <Select
+                  labelId="doctor-select-label"
+                  name="doctorName"
+                  value={formData.doctorName}
+                  label="Doctor's Name"
+                  onChange={handleChange}
+                >
+                  {availableDoctors.map((doctor) => (
+                    <MenuItem key={doctor.id} value={doctor.name}>
+                      {doctor.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.doctorName && (
+                  <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
+                    {errors.doctorName}
+                  </Typography>
+                )}
+              </FormControl>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">Visit Type</FormLabel>
+                <RadioGroup
+                  row
+                  name="visitType"
+                  value={formData.visitType}
+                  onChange={handleChange}
+                >
+                  <FormControlLabel value="New Patient" control={<Radio />} label="New Patient" />
+                  <FormControlLabel value="Follow-up" control={<Radio />} label="Follow-up" />
+                  <FormControlLabel value="Consultation" control={<Radio />} label="Consultation" />
+                </RadioGroup>
+              </FormControl>
+              <TextField
+                type="date"
+                label="Appointment Date"
+                name="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={formData.date}
+                onChange={handleChange}
+                error={!!errors.date}
+                helperText={errors.date}
+                inputProps={{ min, max }}
+              />
+              <TextField
+                type="time"
+                label="Appointment Time"
+                name="time"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={formData.time}
+                onChange={handleChange}
+                error={!!errors.time}
+                helperText={errors.time}
+              />
+            </Box>
+            <Button variant="contained" type="submit" fullWidth sx={{ mt: 3, py: 1.5 }}>
+              Book Appointment
+            </Button>
+          </form>
+        </Paper>
       </Box>
 
       <Snackbar
