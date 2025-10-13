@@ -14,7 +14,6 @@ import {
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Swal from 'sweetalert2';
 import Layout from '../../utils/Layout';
-
 const PatientEntryPage = () => {
   const [patient, setPatient] = useState({
     name: '',
@@ -150,7 +149,6 @@ const PatientEntryPage = () => {
                   </MenuItem>
                   <MenuItem value="Male">Male</MenuItem>
                   <MenuItem value="Female">Female</MenuItem>
-                  <MenuItem value="Other">Other</MenuItem>
                 </Select>
                 {errors.gender && (
                   <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>

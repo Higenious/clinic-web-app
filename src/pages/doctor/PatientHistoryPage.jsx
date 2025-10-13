@@ -1,436 +1,363 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Button,
-  Paper,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Grid,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  MenuItem,
-  IconButton,
-  Select,
+  Paper,
   Divider,
   Chip,
-  RadioGroup,
-  Radio,
-  FormLabel,
-  InputLabel,
-  FormControl,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import HistoryIcon from '@mui/icons-material/History';
-import Swal from 'sweetalert2';
-import Layout from '../../utils/Layout';
-import PrescriptionPreview from './PrescriptionPreview'; // Update path if needed
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useNavigate } from 'react-router-dom'; 
+import HistoryIcon from "@mui/icons-material/History";
+import Swal from "sweetalert2";
+import cureLinkLogoImage from '../../public/Logo/cureLink_Logo.png';
+// Assuming these utility components and services exist in your project structure
+import Layout from "../../utils/Layout";
+import AddPrescription from "./AddPrescription";
+import PrescriptionPreview from "../common/PrescriptionPreview";
+import { finzalizeAppointment, getAllCommonMedicines } from "../../services/service";
+import doctorLogoImage from '../../public/Logo/doctor_logo3.jpeg';
 
-// Mock data for patient history
-const mockPatientHistory = [
-  {
-    id: 1,
-    patientName: 'John Doe',
-    visits: [
-      {
-        id: 101,
-        visitDate: '2025-09-10',
-        treatedBy: 'Dr. Jane Smith',
-        reasonForVisit: 'Routine check-up',
-        bp: '120/80 mmHg',
-        adviceGiven: 'Maintain a healthy diet and exercise regimen.',
-        medicines: [
-          { name: 'Multivitamin', dosage: '1 tablet', when: 'Once a day, morning' },
-          { name: 'Calcium', dosage: '500 mg', when: 'Once a day, afternoon' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    patientName: 'Jane Doe',
-    visits: [
-      {
-        id: 201,
-        visitDate: '2025-08-15',
-        treatedBy: 'Dr. Robert Johnson',
-        reasonForVisit: 'High fever and cough',
-        bp: '130/85 mmHg',
-        adviceGiven: 'Get plenty of rest and stay hydrated.',
-        medicines: [
-          { name: 'Amoxicillin', dosage: '500 mg', when: '3 times a day' },
-          { name: 'Ibuprofen', dosage: '200 mg', when: 'Every 4 hours as needed' },
-        ],
-      },
-    ],
-  },
-];
+
+
+const cureLinkLogoData = {
+    text: "cureLink",
+    url: cureLinkLogoImage, // Use the imported variable
+}
 
 const PatientHistoryPage = () => {
-  const { patientId } = useParams();
+   const navigate = useNavigate();
+  const storedData = localStorage.getItem("selectedAppointment");
+  const appointment = storedData ? JSON.parse(storedData) : null;
+  const doctorId = localStorage.getItem("doctorId");
+  
+  const [adviceNotes, setAdviceNotes] = useState("");
   const [patient, setPatient] = useState(null);
-  const [medicines, setMedicines] = useState([{ name: '', dosage: '1 tab', quantity: '', when: { morning: false, afternoon: false, night: false, beforeFood: false, afterFood: false } }]);
-  const [complaintNotes, setComplaintNotes] = useState('');
-  const [selectedComplaints, setSelectedComplaints] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [prescriptionData, setPrescriptionData] = useState(null);
-  const [bpValue, setBpValue] = useState('');
-  const [bpStatus, setBpStatus] = useState('No');
-  const [sugarValue, setSugarValue] = useState('');
-  const [sugarStatus, setSugarStatus] = useState('No');
-  const [weightValue, setWeightValue] = useState('');
-  const [weightStatus, setWeightStatus] = useState('No');
+  const [prescriptionData, setPrescriptionData] = useState(null); // Holds data prepared for preview
+
+  const [medicines, setMedicines] = useState([{ name: "", dosage: "1 tab", quantity: "", when: {} }]);
+  const [commonMedicines, setCommonMedicines] = useState([]);
+  const [complaintNotes, setComplaintNotes] = useState("");
+  const [selectedComplaints, setSelectedComplaints] = useState([]);
+
+  const [bpValue, setBpValue] = useState("");
+  const [sugarValue, setSugarValue] = useState("");
+  const [weightValue, setWeightValue] = useState("");
+  
+  // Initializing status to 'no' for conditional inputs to work correctly
+  const [bpStatus, setBpStatus] = useState("no"); 
+  const [sugarStatus, setSugarStatus] = useState("no");
+  const [weightStatus, setWeightStatus] = useState("no");
 
   const commonComplaints = [
-    "Fever",
-    "Headache",
-    "Cough",
-    "Sore Throat",
-    "Fatigue",
-    "Nausea",
-    "Body Ache",
-    "Dizziness",
+    "Fever", "Headache", "Cough", "Sore Throat",
+    "Fatigue", "Nausea", "Body Ache", "Dizziness",
   ];
 
-  const handleChipClick = (complaint) => {
-    let newSelectedComplaints;
-    if (selectedComplaints.includes(complaint)) {
-      newSelectedComplaints = selectedComplaints.filter(item => item !== complaint);
-    } else {
-      newSelectedComplaints = [...selectedComplaints, complaint];
-    }
-    setSelectedComplaints(newSelectedComplaints);
-    setComplaintNotes(newSelectedComplaints.join(', '));
-  };
 
+  // Dummy Doctor Info for the Preview Header (Replace with actual data fetch if available)
+const doctorInfo = {
+    name: appointment?.doctorName || appointment?.rawData?.doctor?.name || "Dr. Default Name",
+    specialization: "General Physician",
+    registration: "GMC-12345",
+    address: "101 Clinic Building, City Center, 444601",
+    phone: "+91 98765 43210",
+    logoUrl: doctorLogoImage
+};
+  // Safely access patient and prescriptions data
+  const patientData = appointment?.rawData?.patient || {};
+  const prescriptions = patientData.prescriptions || [];
+
+  // --- Fetch Common Medicines ---
   useEffect(() => {
-    const idToFetch = patientId ? parseInt(patientId, 10) : 1;
-    const foundPatient = mockPatientHistory.find(p => p.id === idToFetch);
-    if (foundPatient) {
-      setPatient(foundPatient);
+    (async () => {
+      try {
+        const res = await getAllCommonMedicines(); 
+        const meds = Array.isArray(res.data) ? res.data : [];
+        setCommonMedicines(meds); 
+      } catch (error) {
+        console.error("Error fetching common medicines:", error);
+        setCommonMedicines([]);
+      }
+    })();
+  }, []);
+
+  // --- Map Patient History ---
+  useEffect(() => {
+    if (!appointment) return;
+    const visitHistory = prescriptions.map((pres) => ({
+      visitDate: new Date(pres.createdAt).toLocaleDateString(),
+      treatedBy: "Dr. Jane Smith", // Dummy data
+      reasonForVisit: appointment.reason || "General consultation",
+      bp: pres.bp || "N/A",
+      adviceGiven: pres.instructions?.join(", ") || "No advice provided.",
+      medicines: pres.medications.map((m) => ({
+        name: m.medicine,
+        dosage: `${m.quantity} tabs`,
+        when: m.dailyDose, // This is likely in '1-0-1' format
+      })),
+    }));
+
+    setPatient({
+      patientName: patientData.name,
+      mobile: patientData.phone,
+      visits: visitHistory,
+    });
+  }, []); // Dependency array for useEffect
+
+  // --- Handlers for Medicine Inputs ---
+  const handleAddMedicine = () => setMedicines([...medicines, { name: "", dosage: "1 tab", quantity: "", when: {} }]);
+  const handleRemoveMedicine = (i) => setMedicines(medicines.filter((_, idx) => idx !== i));
+
+  const handleMedicineChange = (i, e) => {
+    const { name, value, type, checked } = e.target;
+    const updated = [...medicines];
+    if (type === "checkbox") {
+      updated[i].when[name] = checked;
+    } else if (name === "meal") {
+      updated[i].when.meal = value;
     } else {
-      setPatient(mockPatientHistory[0]);
+      updated[i][name] = value;
     }
-  }, [patientId]);
-
-  const handleAddMedicine = () => {
-    setMedicines([...medicines, { name: '', dosage: '', quantity: '', when: { morning: false, afternoon: false, night: false, beforeFood: false, afterFood: false } }]);
+    setMedicines(updated);
   };
 
-  const handleRemoveMedicine = (index) => {
-    const newMedicines = [...medicines];
-    newMedicines.splice(index, 1);
-    setMedicines(newMedicines);
+  const handleChipClick = (complaint) => {
+    setSelectedComplaints((prev) =>
+      prev.includes(complaint)
+        ? prev.filter((c) => c !== complaint)
+        : [...prev, complaint]
+    );
   };
+  
+  // --- UPDATED: PREVIEW BUTTON HANDLER ---
+const handlePrescriptionSubmit = (e) => {
+    e.preventDefault();
+    if (!appointment?.id) return Swal.fire("Error", "Invalid appointment", "error");
 
-  const handleMedicineChange = (index, event) => {
-    const { name, value, checked, type } = event.target;
-    const newMedicines = [...medicines];
-    if (type === 'checkbox') {
-      newMedicines[index].when[name] = checked;
-    } else {
-      newMedicines[index][name] = value;
-    }
-    setMedicines(newMedicines);
-  };
+    const hasMedicines = medicines.some((m) => m.name.trim());
+    if (!hasMedicines) return Swal.fire("Error", "Please add at least one medicine", "error");
+    
+    const finalBpValue = bpStatus === 'yes' ? bpValue : '';
+    const finalSugarValue = sugarStatus === 'yes' ? sugarValue : '';
+    const finalWeightValue = weightStatus === 'yes' ? weightValue : '';
 
-  const handlePrescriptionSubmit = (event) => {
-    event.preventDefault();
-    const hasMedicines = medicines.some(med => med.name.trim() !== '' && (med.dosage.trim() !== '' || med.quantity.trim() !== ''));
+    const newPrescriptionData = {
+        date: new Date().toLocaleDateString(),
+        doctor: doctorInfo, // 💡 Contains name and logoUrl now
+        complaintNotes,
+        selectedComplaints,
+        // 💡 NEW FIELD: Advice Notes
+        adviceNotes, 
+        vitals: {
+            bpValue: finalBpValue,
+            sugarValue: finalSugarValue,
+            weightValue: finalWeightValue,
+        },
+        medicines: medicines.filter(m => m.name.trim()).map((m) => {
+            const dailyDose = `${m.when.morning ? 1 : 0}-${m.when.afternoon ? 1 : 0}-${m.when.night ? 1 : 0}`;
+            const mealTiming = m.when.meal || "after";
+            
+            const doseTimingText = [
+                m.when.morning && 'M',
+                m.when.afternoon && 'A',
+                m.when.night && 'N'
+            ].filter(Boolean).join('-') || 'N/A';
 
-    if (!hasMedicines) {
-        Swal.fire({
-            icon: 'error',
-            title: 'No Medicines Added',
-            text: 'Please add at least one medicine to save the prescription.',
-        });
-        return;
-    }
-
-    const newPrescription = {
-      patientName: patient.patientName,
-      medicines: medicines,
-      complaintNotes: complaintNotes,
-      date: new Date().toLocaleDateString(),
-      bp: bpStatus === 'Yes' ? bpValue : null,
-      sugar: sugarStatus === 'Yes' ? sugarValue : null,
-      weight: weightStatus === 'Yes' ? weightValue : null,
+            return {
+                name: m.name,
+                quantity: m.quantity,
+                dosage: m.dosage, 
+                dailyDose: dailyDose, 
+                mealTiming: mealTiming, 
+                previewDose: `${doseTimingText} (${mealTiming === 'before' ? 'Before Food' : 'After Food'})`
+            };
+        }),
     };
-    setPrescriptionData(newPrescription);
+
+    setPrescriptionData(newPrescriptionData);
     setShowPreview(true);
   };
 
-  if (!patient) {
-    return <Typography>Loading patient data...</Typography>;
-  }
+
+  // --- NEW: SAVE BUTTON HANDLER (Hits the API) ---
+  const handleFinalizePrescription = async () => {
+    if (!appointment?.id || !prescriptionData) return Swal.fire("Error", "No prescription data to save.", "error");
+
+    // The data is already prepared in prescriptionData, format for API payload
+    const apiPayload = {
+        doctorId,
+        prescriptions: prescriptionData.medicines.map((m) => ({
+            medicine: m.name,
+            quantity: parseInt(m.quantity) || 1,
+            dailyDose: m.dailyDose, 
+            mealTiming: m.mealTiming,
+        })),
+        complaints: [prescriptionData.complaintNotes, ...prescriptionData.selectedComplaints], // Include selected chips in complaints
+        bp: prescriptionData.vitals.bpValue,
+        sugar: prescriptionData.vitals.sugarValue,
+        weight: prescriptionData.vitals.weightValue,
+        adviceGiven: [prescriptionData?.adviceNotes]
+    };
+
+    try {
+      const result = await finzalizeAppointment(appointment.id, apiPayload);
+      console.log('result finalize = = = >', result);
+      if (result.status == 'ok') {
+        Swal.fire("Saved!", "Prescription finalized successfully!", "success");
+         localStorage.removeItem("selectedAppointment");
+        // Clear state and refresh or navigate away after saving
+        setShowPreview(false); 
+          setTimeout(() => {
+        navigate(`/hospital`);
+      }, 2000);
+        // Logic to refresh patient history data should go here
+      } else {
+         Swal.fire("Error", result.message || "Could not save prescription due to an API error.", "error");
+      }
+    } catch (error) {
+      console.error('errror wile finalize- - - ->', error);
+      Swal.fire('Error', error, 'error');
+    }
+  };
+
+
+  if (!patient)
+    return (
+      <Layout selectedPage="patient-history">
+        <Box p={4}>
+          <Typography>Loading patient history...</Typography>
+        </Box>
+      </Layout>
+    );
 
   return (
     <Layout selectedPage="patient-history">
       <Box p={3}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2, color: "#1976d2" }}>
+        <Box display="flex" alignItems="center" mb={2} color="#1976d2">
           <HistoryIcon sx={{ mr: 1, fontSize: 32 }} />
-          <Typography variant="h5" fontWeight="bold">
-            {patient.patientName}'s History
+              <Typography variant="h6" fontWeight="bold" color="primary">
+               Prescription for {patient.patientName}
           </Typography>
         </Box>
 
         {showPreview ? (
-          <PrescriptionPreview data={prescriptionData} onBack={() => {
-            setShowPreview(false);
-            setMedicines([{ name: '', dosage: '', quantity: '', when: { morning: false, afternoon: false, night: false, beforeFood: false, afterFood: false } }]);
-            setComplaintNotes('');
-            setSelectedComplaints([]);
-            setBpStatus('No');
-            setBpValue('');
-            setSugarStatus('No');
-            setSugarValue('');
-            setWeightStatus('No');
-            setWeightValue('');
-          }} />
+          <PrescriptionPreview 
+            data={prescriptionData} 
+            onBack={() => setShowPreview(false)} 
+            onSave={handleFinalizePrescription} // Passes the new save function
+            cureLinkLogo={cureLinkLogoData} 
+          />
         ) : (
           <>
-            <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">Add New Prescription</Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddMedicine}
-                  sx={{ backgroundColor: '#4caf50', '&:hover': { backgroundColor: '#388e3c' } }}
-                >
-                  Add Medicine
-                </Button>
-              </Box>
+            <AddPrescription
+              {...{
+                medicines,
+                handleAddMedicine,
+                handleRemoveMedicine,
+                handleMedicineChange,
+                bpValue,
+                setBpValue,
+                sugarValue,
+                setSugarValue,
+                weightValue,
+                setWeightValue,
+                bpStatus,
+                setBpStatus,
+                sugarStatus,
+                setSugarStatus,
+                weightStatus,
+                setWeightStatus,
+                complaintNotes,
+                setComplaintNotes,
+                setMedicines,
+                commonComplaints,
+                selectedComplaints,
+                handleChipClick,
+                handlePrescriptionSubmit, // Triggers PREVIEW
+                commonMedicines,
+                adviceNotes,
+                setAdviceNotes,
+              }}
+            />
 
-              <form onSubmit={handlePrescriptionSubmit}>
-                {/* Vitals Section */}
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold">Vitals</Typography>
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth>
-                      <FormLabel>BP</FormLabel>
-                      <RadioGroup row value={bpStatus} onChange={(e) => setBpStatus(e.target.value)}>
-                        <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
-                        <FormControlLabel value="No" control={<Radio />} label="No" />
-                      </RadioGroup>
-                    </FormControl>
-                    {bpStatus === 'Yes' && (
-                      <TextField
-                        fullWidth
-                        label="BP Value"
-                        value={bpValue}
-                        onChange={(e) => setBpValue(e.target.value)}
-                        sx={{ mt: 1 }}
-                      />
-                    )}
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth>
-                      <FormLabel>Sugar</FormLabel>
-                      <RadioGroup row value={sugarStatus} onChange={(e) => setSugarStatus(e.target.value)}>
-                        <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
-                        <FormControlLabel value="No" control={<Radio />} label="No" />
-                      </RadioGroup>
-                    </FormControl>
-                    {sugarStatus === 'Yes' && (
-                      <TextField
-                        fullWidth
-                        label="Sugar Value"
-                        value={sugarValue}
-                        onChange={(e) => setSugarValue(e.target.value)}
-                        sx={{ mt: 1 }}
-                      />
-                    )}
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth>
-                      <FormLabel>Weight</FormLabel>
-                      <RadioGroup row value={weightStatus} onChange={(e) => setWeightStatus(e.target.value)}>
-                        <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
-                        <FormControlLabel value="No" control={<Radio />} label="No" />
-                      </RadioGroup>
-                    </FormControl>
-                    {weightStatus === 'Yes' && (
-                      <TextField
-                        fullWidth
-                        label="Weight (in kg)"
-                        value={weightValue}
-                        onChange={(e) => setWeightValue(e.target.value)}
-                        sx={{ mt: 1 }}
-                      />
-                    )}
-                  </Grid>
-                </Grid>
-
-                {/* Complaints Section */}
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold">Common Complaints</Typography>
-                <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {commonComplaints.map((complaint, index) => (
-                    <Chip
-                      key={index}
-                      label={complaint}
-                      onClick={() => handleChipClick(complaint)}
-                      color={selectedComplaints.includes(complaint) ? 'primary' : 'default'}
-                      variant={selectedComplaints.includes(complaint) ? 'filled' : 'outlined'}
-                    />
-                  ))}
-                </Box>
-                <TextField
-                  fullWidth
-                  label="Patient Complaint / Notes"
-                  multiline
-                  rows={3}
-                  value={complaintNotes}
-                  onChange={(e) => setComplaintNotes(e.target.value)}
-                  sx={{ mb: 3 }}
-                />
-
-                {/* Medicines Section */}
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold">Medicines</Typography>
-                {medicines.map((medicine, index) => (
-                  <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} sm={5}>
-                        <TextField
-                          fullWidth
-                          label="Medicine Name"
-                          name="name"
-                          value={medicine.name}
-                          onChange={(e) => handleMedicineChange(index, e)}
-                          required
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <TextField
-                          fullWidth
-                          name="quantity"
-                          value={medicine.quantity}
-                          label="Quantity"
-                          onChange={(e) => handleMedicineChange(index, e)}
-                          required
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <FormControl fullWidth>
-                          <InputLabel>Quantity</InputLabel>
-                          <Select
-                         
-
-                            label="Daily Dose"
-                            name="dosage"
-                            value={medicine.dosage}
-                            onChange={(e) => handleMedicineChange(index, e)}
-                          >
-                            <MenuItem value="1 tab">1 tab</MenuItem>
-                            <MenuItem value="2 tabs">2 tabs</MenuItem>
-                            <MenuItem value="3 tabs">3 tabs</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={1}>
-                        <IconButton color="error" onClick={() => handleRemoveMedicine(index)}>
-                          <RemoveIcon />
-                        </IconButton>
-                      </Grid>
-                    </Grid>
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle1" gutterBottom>When to Take:</Typography>
-                      <Grid container spacing={1}>
-                        <Grid item>
-                          <FormControlLabel
-                            control={<Checkbox name="morning" checked={medicine.when.morning} onChange={(e) => handleMedicineChange(index, e)} />}
-                            label="Morning"
+            {/* --- Past Visit History --- */}
+            <Accordion 
+              defaultExpanded={false}
+              sx={{ 
+                border: '1px solid #ddd', 
+                borderRadius: 2, 
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)', 
+                mt: 4
+              }}
+            >
+              <AccordionSummary 
+                expandIcon={<ExpandMoreIcon />}
+                sx={{ 
+                  backgroundColor: '#f8fafd', 
+                  borderBottom: '1px solid #eee', 
+                  borderRadius: '2px 2px 0 0',
+                }}
+              >
+                <Typography variant="h6" color="text.primary">
+                  <HistoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} /> 
+                  Past Visit History
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                {patient.visits.length === 0 ? (
+                  <Typography color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
+                    No previous visits found (First visit).
+                  </Typography>
+                ) : (
+                  patient.visits.map((v, i) => (
+                    <Paper 
+                      key={i} 
+                      sx={{ 
+                        p: 3, 
+                        mb: 3, 
+                        backgroundColor: "#f9f9f9", 
+                        borderLeft: '4px solid #1976d2', 
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)', 
+                        transition: 'box-shadow 0.3s',
+                        '&:hover': { boxShadow: '0 4px 15px rgba(0,0,0,0.15)' } 
+                      }}
+                    >
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                          <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                              Visit on {v.visitDate}
+                          </Typography>
+                          <Chip 
+                            label={`By ${v.treatedBy}`} 
+                            size="small" 
+                            color="default" 
+                            variant="outlined" 
                           />
-                        </Grid>
-                        <Grid item>
-                          <FormControlLabel
-                            control={<Checkbox name="afternoon" checked={medicine.when.afternoon} onChange={(e) => handleMedicineChange(index, e)} />}
-                            label="Afternoon"
-                          />
-                        </Grid>
-                        <Grid item>
-                          <FormControlLabel
-                            control={<Checkbox name="night" checked={medicine.when.night} onChange={(e) => handleMedicineChange(index, e)} />}
-                            label="Night"
-                          />
-                        </Grid>
-                        <Grid item>
-                          <FormControlLabel
-                            control={<Checkbox name="beforeFood" checked={medicine.when.beforeFood} onChange={(e) => handleMedicineChange(index, e)} />}
-                            label="Before Food"
-                          />
-                        </Grid>
-                        <Grid item>
-                          <FormControlLabel
-                            control={<Checkbox name="afterFood" checked={medicine.when.afterFood} onChange={(e) => handleMedicineChange(index, e)} />}
-                            label="After Food"
-                          />
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  </Box>
-                ))}
-                <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
-                  Save and Preview Prescription
-                </Button>
-              </form>
-            </Paper>
-
-            <Divider sx={{ my: 4 }} />
-
-            <Box>
-              <Typography variant="h6" sx={{ mb: 2 }}>Past Visit History</Typography>
-              {patient.visits.map((visit) => (
-                <Accordion key={visit.id} sx={{ mb: 2 }} elevation={2}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography variant="body1" fontWeight="bold">
-                      Visit on {visit.visitDate}
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2">
-                          <strong>Treated By:</strong> {visit.treatedBy}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>Reason for Visit:</strong> {visit.reasonForVisit}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2">
-                          <strong>BP:</strong> {visit.bp}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>Advice Given:</strong> {visit.adviceGiven}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
-                        Prescribed Medicines:
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">Reason: {v.reasonForVisit}</Typography>
+                      <Typography variant="body2" color="text.secondary">BP: **{v.bp}**</Typography>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Typography fontWeight="bold" sx={{mb: 0.5}}>Advice:</Typography>
+                      <Typography variant="body2" sx={{ ml: 1, fontStyle: 'italic' }}>
+                        {v.adviceGiven}
                       </Typography>
-                      <Grid container spacing={1}>
-                        {visit.medicines.map((med, medIndex) => (
-                          <Grid item xs={12} key={medIndex}>
-                            <Paper sx={{ p: 1, backgroundColor: '#e3f2fd' }}>
-                              <Typography variant="body2">
-                                <strong>{med.name}:</strong> {med.dosage} ({med.when})
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
-                  </AccordionDetails>
-                </Accordion>
-              ))}
-            </Box>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Typography fontWeight="bold" sx={{mb: 0.5}}>Medicines:</Typography>
+                      {v.medicines.map((m, j) => (
+                        <Box key={j} display="flex" alignItems="center" sx={{ ml: 1, mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ mr: 1 }}>• **{m.name}**</Typography>
+                          <Chip label={`${m.dosage} (${m.when})`} size="small" color="success" variant="outlined" />
+                        </Box>
+                      ))}
+                    </Paper>
+                  ))
+                )}
+              </AccordionDetails>
+            </Accordion>
           </>
         )}
       </Box>

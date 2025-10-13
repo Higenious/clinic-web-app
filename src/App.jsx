@@ -11,9 +11,10 @@ import LoginPage from "../src/pages/doctor/Login";
 import HospitalDashboard from "./pages/doctor/HospitalDashboard";
 import AppointmentPage from "./pages/patient/AppointmentPage";
 import SettingsPage from "./pages/admin/SettingsPage";
-import AdminDashboard from "./pages/admin/AdminDashboard"
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import PatientHistoryPage from "./pages/doctor/PatientHistoryPage";
-import { Box } from '@mui/material'; // Import Box
+import AppointmentsPage from "./pages/common/AppointmentsPage"; 
+import { Box } from "@mui/material";
 
 // Optional: Protects any route from unauthorized access
 const PrivateRoute = ({ children, allowedRoles }) => {
@@ -36,74 +37,106 @@ function App() {
 
   return (
     <Router>
-          <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
+      <Box
+        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+      >
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Doctor and Staff Routes */}
-        <Route
-          path="/hospital"
-          element={
-            <PrivateRoute allowedRoles={["staff", "doctor"]}>
-              <HospitalDashboard />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/appointment"
-          element={
-            <PrivateRoute allowedRoles={["staff", "doctor"]}>
-              <AppointmentPage />
-            </PrivateRoute>
-          }
-        />
-                <Route
-          path="/admin"
-          element={
-            <PrivateRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
-            </PrivateRoute>
-          }
-        />
+          {/* Hospital Routes */}
+          <Route
+            path="/hospital"
+            element={
+              <PrivateRoute allowedRoles={["staff", "doctor", "hospital"]}>
+                <HospitalDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/appointment"
+            element={
+              <PrivateRoute allowedRoles={["staff", "doctor"]}>
+                <AppointmentPage />
+              </PrivateRoute>
+            }
+          />
 
-        {/* Doctor-only Routes */}
-        <Route
-          path="/patient-history"
-          element={
-            <PrivateRoute allowedRoles={["doctor"]}>
-              <PatientHistoryPage />
-            </PrivateRoute>
-          }
-        />
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
 
-        {/* All Authenticated Users */}
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute allowedRoles={["staff", "doctor"]}>
-              <SettingsPage />
-            </PrivateRoute>
-          }
-        />
+          {/* Doctor-only */}
+          <Route
+            path="/patient-history"
+            element={
+              <PrivateRoute allowedRoles={["doctor"]}>
+                <PatientHistoryPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/patient-history/:patientId"
+            element={
+              <PrivateRoute allowedRoles={["doctor"]}>
+                <PatientHistoryPage />
+              </PrivateRoute>
+            }
+          />
 
-<Route path="/patient-history/:patientId" element={<PatientHistoryPage />} />
-        {/* Redirect based on role */}
-        <Route
-          path="/"
-          element={
-            token ? (
-              localStorage.getItem("role") === "admin" ? (
-                // Assuming an admin dashboard exists, but not in this code
-                <Navigate to="/admin" />
+          <Route
+            path="/prescription/:appointmentId"
+            element={
+              <PrivateRoute allowedRoles={["doctor"]}>
+                <PatientHistoryPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Settings (all hospital staff/doctor) */}
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute allowedRoles={["staff", "doctor", "hospital"]}>
+                <SettingsPage />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/hospital/appointments"
+            element={
+              <PrivateRoute allowedRoles={["staff", "doctor", "hospital"]}>
+                <AppointmentsPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Redirect root based on role */}
+          <Route
+            path="/"
+            element={
+              token ? (
+                localStorage.getItem("role") === "admin" ? (
+                  <Navigate to="/admin" />
+                ) : ["doctor", "staff", "hospital"].includes(
+                    localStorage.getItem("role")
+                  ) ? (
+                  <Navigate to="/hospital" />
+                ) : (
+                  <Navigate to="/login" />
+                )
               ) : (
-                <Navigate to="/hospital" />
+                <Navigate to="/login" />
               )
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-      </Routes>
+            }
+          />
+        </Routes>
       </Box>
     </Router>
   );
