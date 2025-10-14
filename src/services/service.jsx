@@ -20,10 +20,17 @@ export const login = async (payload) => {
   }
 };
 
+/** Malke appoitnmemnt 
+ * remove messageType hardcoaded
+*/
 export const makeAppointment = async (appointmentData) => {
   try {
     const url = `${baseUrl}/doctor/appointment`;
-    const response = await axios.post(url, appointmentData);
+    const payload = {
+      ...appointmentData,
+      messageType: "sms",
+    };
+    const response = await axios.post(url, payload);
     return response.data;
   } catch (error) {
     console.error('Error creating appointment:', error);
