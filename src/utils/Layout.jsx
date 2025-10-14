@@ -151,7 +151,7 @@ const Layout = ({ children, selectedPage }) => {
             variant="h6"
             sx={{ flexGrow: 1, fontWeight: "bold", letterSpacing: "0.5px" }}
           >
-            Well Nest
+            MediPanels
           </Typography>
           <IconButton color="inherit">
             <Badge badgeContent={4} color="secondary">

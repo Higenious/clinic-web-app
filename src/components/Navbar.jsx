@@ -7,7 +7,7 @@ const Navbar = () => {
     <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, backgroundColor: '#1976d2' }}>
       <Toolbar>
         <Typography variant="h6" component="div">
-          CureLink
+          MediPanels
         </Typography>
       </Toolbar>
     </AppBar>
