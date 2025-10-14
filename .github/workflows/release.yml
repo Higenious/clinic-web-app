@@ -11,22 +11,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧩 Checkout code
-        uses: actions/checkout@v4
+      - name: 🧩 START — Checkout code
+        run: echo "✅ Starting job Checking out code..."
+
+      - uses: actions/checkout@v4
 
       - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
+        run: echo "✅ Setting up Node.js v18..."
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: |
+          echo "✅ Installing dependencies..."
+          npm ci
 
       - name: 🏗️ Build React app
-        run: npm run build
+        run: |
+          echo "✅ Building React app..."
+          npm run build
 
-      - name: 🚀 Deploy to S3
-        uses: jakejarvis/s3-sync-action@master
+      - name: 🚀 Deploying build to S3 bucket
+        run: echo "✅ Starting S3 upload..."
+      - uses: jakejarvis/s3-sync-action@master
         with:
           args: --delete
         env:
@@ -34,13 +42,19 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          SOURCE_DIR: "dist" # or "build" depending on your setup
+          SOURCE_DIR: "dist"
 
-      - name: 🔄 Invalidate CloudFront cache
-        uses: chetan/invalidate-cloudfront-action@v1.2
-        env:
+      - name: 🔄 Announce CloudFront invalidation start
+        run: echo "✅ Invalidating CloudFront cache..."
+
+      - uses: aws-actions/cloudfront-invalidate-cache@v2
+        with:
           distribution-id: E105JFJCQ1GSP9
           paths: "/*"
+        env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: ✅ DONE — Deployment Complete
+        run: echo "🎉 Deployment completed successfully!"
