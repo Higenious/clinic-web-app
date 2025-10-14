@@ -37,9 +37,9 @@ jobs:
           SOURCE_DIR: "dist" # or "build" depending on your setup
 
       - name: 🔄 Invalidate CloudFront cache
-        uses: awact/cloudfront-action@v2
+        uses: chetan/invalidate-cloudfront-action@v1.2
         with:
-          distribution-id: E3A1BEXAMPLE123
+          distribution-id: E105JFJCQ1GSP9
           paths: "/*"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
