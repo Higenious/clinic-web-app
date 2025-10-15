@@ -13,7 +13,6 @@ import {
   InputAdornment,
   Link,
 } from '@mui/material';
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
@@ -21,7 +20,8 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import { styled, keyframes } from '@mui/material/styles';
-import { login } from '../../services/service';
+import ForgotPasswordModal from '../common/ForgotPasswordModal';
+import { login, forgotPassword } from '../../services/service';
 
 // ------------------ Styling ------------------
 const backgroundAnimation = keyframes`
@@ -69,6 +69,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -218,12 +219,32 @@ const LoginPage = () => {
                   </Button>
                 </motion.div>
 
-                <Box mt={2} textAlign="right">
-                  <Link href="#" variant="body2" sx={{ color: '#1565c0' }}>
-                    Forgot Password?
-                  </Link>
-                </Box>
+  
               </Box>
+              {/* Forgot Password Link outside form */}
+<Box mt={2} textAlign="right">
+  <Link
+    component="button"
+    variant="body2"
+    onClick={() => setForgotOpen(true)}
+    sx={{
+      color: '#1565c0',
+      fontWeight: 600,
+      textDecoration: 'underline',
+      textTransform: 'none',
+      fontSize: '0.9rem',
+    }}
+  >
+    Forgot Password?
+  </Link>
+</Box>
+
+              {/* ------------------- Forgot Password Modal ------------------- */}
+              <ForgotPasswordModal
+                open={forgotOpen}
+                handleClose={() => setForgotOpen(false)}
+                forgotPasswordApi={forgotPassword}
+              />
             </StyledLoginPaper>
           </motion.div>
         </AnimatePresence>

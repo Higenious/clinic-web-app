@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// Load from environment (fallback to localhost if not defined)
-//const baseUrl = import.meta.env.VITE_API_URL || "https://api.medipanels.com/api";
-const baseUrl ="https://api.medipanels.com/api";
+ const baseUrl = import.meta.env.VITE_API_URL || "https://api.medipanels.com/api";
+//const baseUrl ="https://api.medipanels.com/api";
 
 //let cachedCommonMedicines = null;
 
@@ -210,4 +209,11 @@ export const addCommonMedicines = async (payload) => {
     console.error('Error during add Medicines:', error);
     throw error.response ? error.response.data : { message: 'Network error or server unavailable.' };
   }
+};
+
+
+export const forgotPassword = async ({ mobile }) => {
+  // Mock API
+  if (mobile === "9999999999") return { success: true };
+  return { success: false };
 };
