@@ -1,7 +1,7 @@
 import axios from 'axios';
 
- const baseUrl = import.meta.env.VITE_API_URL || "https://api.medipanels.com/api";
-//const baseUrl ="https://api.medipanels.com/api";
+// const baseUrl = import.meta.env.VITE_API_URL || "https://api.medipanels.com/api";
+const baseUrl ="https://api.medipanels.com/api";
 
 //let cachedCommonMedicines = null;
 
